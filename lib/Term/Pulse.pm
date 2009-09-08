@@ -5,61 +5,111 @@ use strict;
 
 =head1 NAME
 
-Term::Pulse - The great new Term::Pulse!
+Term::Pulse - show pulsed progress bar in terminal
 
 =head1 VERSION
 
-Version 0.01
+Version 0.03
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.03';
+our @ISA = qw(Exporter);
+our @EXPORT = qw(pulse_start pulse_stop);
 
+use Time::HiRes qw(usleep time);
+require Exporter;
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
-
-Perhaps a little code snippet.
-
     use Term::Pulse;
-
-    my $foo = Term::Pulse->new();
-    ...
+    pulse_start( name => 'Checking', rotate => 0, time => 1 ); # start the pulse
+    sleep 3;
+    pulse_stop()                                               # stop it
 
 =head1 EXPORT
 
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
+The following functions are exported by default.
+
+=head2 pulse_start()
+
+=head2 pulse_stop()
 
 =head1 FUNCTIONS
 
-=head2 function1
+=head2 pulse_start()
+
+Use this functions to start the pulse. Accept the following arguments:
+
+    Argument            Default
+    ----------------------------
+    name                'Working'
+    rotate              0
+    size                16
+    time                0
 
 =cut
 
-sub function1 {
+my $pid;
+my $global_name;
+my $global_start_time;
+my @mark = qw(- \ | / - \ | /);
+$| = 1;
+
+sub pulse_start {
+    my %args = @_;
+    my $name = defined $args{name}   ? $args{name}   : 'Working';
+    my $type = defined $args{rotate} ? $args{rotate} : 0;
+    my $size = defined $args{size}   ? $args{size}   : 16;
+    my $time = defined $args{time}   ? $args{time}   : 0;
+    my $start = time;
+    $global_start_time = $start;
+
+    $global_name = $name;
+
+    $pid = fork and return;
+    while (1) {
+        foreach my $index (1..$size) {
+            my $mark = $type ? $mark[$index % 8] : q{=};
+            printf "$name...[%s%s%s]", q{ } x $index, $mark, q{ } x ($size - $index + 1);
+            printf " (%f sec elapsed)\r", (time - $start) if $time;
+            usleep 200000;
+        }
+
+        foreach my $index (1..$size) {
+            my $mark = $type ? $mark[($index % 8) * -1] : q{=};
+            printf "$name...[%s%s%s]", q{ } x ($size - $index + 1), $mark, q{ } x $index;
+            printf " (%f sec elapsed)\r" , (time - $start ) if $time;
+            usleep 200000;
+        }
+    }
 }
 
-=head2 function2
+=head2 pulse_stop()
+
+Stop the pulse and return elapsed time
 
 =cut
 
-sub function2 {
+sub pulse_stop {
+    kill 9 => $pid;
+    my $length = length($global_name);
+    printf "$global_name%sDone%s\n", q{.} x (35 - $length), q{ } x 43;
+    my $elapsed_time = time - $global_start_time;
+    return $elapsed_time;
 }
+
+=head1 KNOWN PROBLEMS
+
+Not thread safe.
 
 =head1 AUTHOR
 
-Alec Chen, C<< <alec at cpan.org> >>
+Yen-Liang Chen, C<< <alec at cpan.com> >>
 
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-term-pulse at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Term-Pulse>.  I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
-
-
-
+Please report any bugs or feature requests to C<bug-term-pulse at rt.cpan.org>, or through the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Term-Pulse>. I will be notified, and then you'll automatically be notified of progress on your bug as I make changes.
 
 =head1 SUPPORT
 
@@ -86,24 +136,17 @@ L<http://cpanratings.perl.org/d/Term-Pulse>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/Term-Pulse/>
+L<http://search.cpan.org/dist/Term-Pulse>
 
 =back
 
 
-=head1 ACKNOWLEDGEMENTS
-
-
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2009 Alec Chen.
+Copyright 2008 Alec Chen, all rights reserved.
 
 This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
-
-See http://dev.perl.org/licenses/ for more information.
-
+under the same terms as Perl itself.
 
 =cut
 
