@@ -72,14 +72,16 @@ sub pulse_start {
         foreach my $index (1..$size) {
             my $mark = $type ? $mark[$index % 8] : q{=};
             printf "$name...[%s%s%s]", q{ } x $index, $mark, q{ } x ($size - $index + 1);
-            printf " (%f sec elapsed)\r", (time - $start) if $time;
+            printf " (%f sec elapsed)", (time - $start) if $time;
+            printf "\r";
             usleep 200000;
         }
 
         foreach my $index (1..$size) {
             my $mark = $type ? $mark[($index % 8) * -1] : q{=};
             printf "$name...[%s%s%s]", q{ } x ($size - $index + 1), $mark, q{ } x $index;
-            printf " (%f sec elapsed)\r" , (time - $start ) if $time;
+            printf " (%f sec elapsed)" , (time - $start ) if $time;
+            printf "\r";
             usleep 200000;
         }
     }
