@@ -1,4 +1,8 @@
 Revision history for Term-Pulse
 
-0.03    2009年09月08日 21時21分05秒
+0.04    2012/10/9
+        fix a bug reported by glasswalk3r
+        update documentation
+
+0.03    2009/9/8
         use Module::Install 

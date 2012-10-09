@@ -9,11 +9,11 @@ Term::Pulse - show pulsed progress bar in terminal
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 our @ISA = qw(Exporter);
 our @EXPORT = qw(pulse_start pulse_stop);
 
@@ -41,12 +41,25 @@ The following functions are exported by default.
 
 Use this functions to start the pulse. Accept the following arguments:
 
-    Argument            Default
-    ----------------------------
-    name                'Working'
-    rotate              0
-    size                16
-    time                0
+=over
+
+=item name
+
+A simple message displayed before the pulse. The default value is 'Working'.
+
+=item rotate
+
+Boolean. Rotate the pulse if set to 1. Turn off by default.
+
+=item time
+
+Boolean. Display the elapsed time if set to 1. Turn off by default.
+
+=item size
+
+Set the pulse size. The default value is 16.
+
+=back
 
 =cut
 
@@ -57,29 +70,33 @@ my @mark = qw(- \ | / - \ | /);
 $| = 1;
 
 sub pulse_start {
-    my %args = @_;
-    my $name = defined $args{name}   ? $args{name}   : 'Working';
-    my $type = defined $args{rotate} ? $args{rotate} : 0;
-    my $size = defined $args{size}   ? $args{size}   : 16;
-    my $time = defined $args{time}   ? $args{time}   : 0;
-    my $start = time;
+    my %args   = @_;
+    my $name   = defined $args{name}   ? $args{name}   : 'Working';
+    my $rotate = defined $args{rotate} ? $args{rotate} : 0;
+    my $size   = defined $args{size}   ? $args{size}   : 16;
+    my $time   = defined $args{time}   ? $args{time}   : 0;
+    my $start  = time;
+
     $global_start_time = $start;
-
     $global_name = $name;
-
     $pid = fork and return;
+
     while (1) {
+        # forward
         foreach my $index (1..$size) {
-            my $mark = $type ? $mark[$index % 8] : q{=};
-            printf "$name...[%s%s%s]", q{ } x $index, $mark, q{ } x ($size - $index + 1);
-            printf " (%f sec elapsed)\r", (time - $start) if $time;
+            my $mark = $rotate ? $mark[$index % 8] : q{=};
+            printf "$name...[%s%s%s]", q{ } x ($index - 1), $mark, q{ } x ($size - $index);
+            printf " (%f sec elapsed)", (time - $start) if $time;
+            printf "\r";
             usleep 200000;
         }
 
+        # backward
         foreach my $index (1..$size) {
-            my $mark = $type ? $mark[($index % 8) * -1] : q{=};
-            printf "$name...[%s%s%s]", q{ } x ($size - $index + 1), $mark, q{ } x $index;
-            printf " (%f sec elapsed)\r" , (time - $start ) if $time;
+            my $mark = $rotate ? $mark[($index % 8) * -1] : q{=};
+            printf "$name...[%s%s%s]", q{ } x ($size - $index), $mark, q{ } x ($index - 1);
+            printf " (%f sec elapsed)" , (time - $start ) if $time;
+            printf "\r";
             usleep 200000;
         }
     }
@@ -93,8 +110,10 @@ Stop the pulse and return elapsed time
 
 sub pulse_stop {
     kill 9 => $pid;
+
     my $length = length($global_name);
     printf "$global_name%sDone%s\n", q{.} x (35 - $length), q{ } x 43;
+
     my $elapsed_time = time - $global_start_time;
     return $elapsed_time;
 }
