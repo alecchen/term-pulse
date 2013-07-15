@@ -9,11 +9,11 @@ Term::Pulse - show pulsed progress bar in terminal
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 our @ISA = qw(Exporter);
 our @EXPORT = qw(pulse_start pulse_stop);
 
@@ -117,6 +117,8 @@ sub pulse_stop {
     my $elapsed_time = time - $global_start_time;
     return $elapsed_time;
 }
+
+$SIG{__DIE__} = sub { pulse_stop() };
 
 =head1 KNOWN PROBLEMS
 
